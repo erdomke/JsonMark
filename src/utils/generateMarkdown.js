@@ -264,8 +264,6 @@ function schemaToMarkdown(schema, resolveRef, options) {
   if (schema.default !== undefined)
     paragraphs.push(`Default value: \`${JSON.stringify(schema.default)}\``);
 
-  paragraphs.push(...alternatesDoc);
-
   const primitiveValidations = [
     getRangeValidation('Value',
       schema.minimum ?? schema.exclusiveMinimum,
@@ -328,6 +326,8 @@ function schemaToMarkdown(schema, resolveRef, options) {
       paragraphs.splice(1, 1);
     }
   }
+
+  paragraphs.push(...alternatesDoc);
 
   if (typeof options.ifDefined === 'object') {
     const ifDefinedDoc = schemaToMarkdown(options.ifDefined, resolveRef, {});

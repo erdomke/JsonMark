@@ -15,6 +15,7 @@
       flex-direction: column;
       flex: 1;
       height: 100%;
+      min-width: 0;
     }
     .panel-label {
       font-weight: bold;
@@ -22,35 +23,42 @@
       padding: 0.2em 0.2em;
       opacity: 0.8;
     }
+    main {
+      display: flex;
+      width: 100%;
+      height: 100%;
+    }
     #output {
       padding: 0 1em;
-      overflow-y: auto;
+      overflow: auto;
     }
   </style>
   <script type="text/javascript" src="https://unpkg.com/monaco-editor@latest/min/vs/loader.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
 </head>
-<body class="markdown-body" style="display: flex;">
-  <div class="app-column">
-    <div class="panel-label">Schema:</div>
-    <div id="schemaEditor" style="flex: 1"></div>
-    <div style="display: flex; align-items: baseline;">
-      <div style="flex: 1;">
-        <label>
-          Starting Heading Level (1-6): <input type="number" value="1" id="headingLevel" min="1" max="6" style="width: 50px;">
-        </label>
+<body class="markdown-body">
+  <main>
+    <div class="app-column">
+      <div class="panel-label">Schema:</div>
+      <div id="schemaEditor" style="flex: 1"></div>
+      <div style="display: flex; align-items: baseline;">
+        <div style="flex: 1;">
+          <label>
+            Starting Heading Level (1-6): <input type="number" value="1" id="headingLevel" min="1" max="6" style="width: 50px;">
+          </label>
+        </div>
+        <div>
+          <button id="convertBtn">Convert to Markdown</button>
+        </div>
       </div>
-      <div>
-        <button id="convertBtn">Convert to Markdown</button>
-      </div>
+      <div class="panel-label">Markdown:</div>
+      <div id="markdownEditor" style="flex: 1"></div>
     </div>
-    <div class="panel-label">Markdown:</div>
-    <div id="markdownEditor" style="flex: 1"></div>
-  </div>
-  <div class="app-column">
-    <div class="panel-label">Output:</div>
-    <div id="output"></div>
-  </div>
+    <div class="app-column">
+      <div class="panel-label">Output:</div>
+      <div id="output"></div>
+    </div>
+  </main>
   
   <script>
     require.config({ paths: { 'vs': 'https://unpkg.com/monaco-editor@latest/min/vs' }});
@@ -70,378 +78,472 @@
       }
     };
 
-    require(['vs/editor/editor.main'], function () {
-      window.schemaEditor = monaco.editor.create(document.getElementById('schemaEditor'), {
-        value: `{
-  "title": "Example",
-  "type": "object",
-  "properties": {
-    "name": { 
-      "type": "string"
-    },
-    "age": { 
-      "type": "integer",
-      "minimum": 0
-    }
-  }
-}`,
-        language: 'json',
-        theme: 'vs-dark'
-      });
-      window.markdownEditor = monaco.editor.create(document.getElementById('markdownEditor'), {
-        language: 'markdown',
-        theme: 'vs-dark',
-        readOnly: true
-      });
-      monaco.editor.defineTheme('github-dark', {
-        "base": "vs-dark",
-        "inherit": true,
-        "rules": [
-          {
-            "background": "24292e",
-            "token": ""
-          },
-          {
-            "foreground": "959da5",
-            "token": "comment"
-          },
-          {
-            "foreground": "959da5",
-            "token": "punctuation.definition.comment"
-          },
-          {
-            "foreground": "959da5",
-            "token": "string.comment"
-          },
-          {
-            "foreground": "c8e1ff",
-            "token": "constant"
-          },
-          {
-            "foreground": "c8e1ff",
-            "token": "entity.name.constant"
-          },
-          {
-            "foreground": "c8e1ff",
-            "token": "variable.other.constant"
-          },
-          {
-            "foreground": "c8e1ff",
-            "token": "variable.language"
-          },
-          {
-            "foreground": "b392f0",
-            "token": "entity"
-          },
-          {
-            "foreground": "b392f0",
-            "token": "entity.name"
-          },
-          {
-            "foreground": "f6f8fa",
-            "token": "variable.parameter.function"
-          },
-          {
-            "foreground": "7bcc72",
-            "token": "entity.name.tag"
-          },
-          {
-            "foreground": "ea4a5a",
-            "token": "keyword"
-          },
-          {
-            "foreground": "ea4a5a",
-            "token": "storage"
-          },
-          {
-            "foreground": "ea4a5a",
-            "token": "storage.type"
-          },
-          {
-            "foreground": "f6f8fa",
-            "token": "storage.modifier.package"
-          },
-          {
-            "foreground": "f6f8fa",
-            "token": "storage.modifier.import"
-          },
-          {
-            "foreground": "f6f8fa",
-            "token": "storage.type.java"
-          },
-          {
-            "foreground": "79b8ff",
-            "token": "string"
-          },
-          {
-            "foreground": "79b8ff",
-            "token": "punctuation.definition.string"
-          },
-          {
-            "foreground": "79b8ff",
-            "token": "string punctuation.section.embedded source"
-          },
-          {
-            "foreground": "c8e1ff",
-            "token": "support"
-          },
-          {
-            "foreground": "c8e1ff",
-            "token": "meta.property-name"
-          },
-          {
-            "foreground": "fb8532",
-            "token": "variable"
-          },
-          {
-            "foreground": "f6f8fa",
-            "token": "variable.other"
-          },
-          {
-            "foreground": "d73a49",
-            "fontStyle": "bold italic underline",
-            "token": "invalid.broken"
-          },
-          {
-            "foreground": "d73a49",
-            "fontStyle": "bold italic underline",
-            "token": "invalid.deprecated"
-          },
-          {
-            "foreground": "fafbfc",
-            "background": "d73a49",
-            "fontStyle": "italic underline",
-            "token": "invalid.illegal"
-          },
-          {
-            "foreground": "fafbfc",
-            "background": "d73a49",
-            "fontStyle": "italic underline",
-            "token": "carriage-return"
-          },
-          {
-            "foreground": "d73a49",
-            "fontStyle": "bold italic underline",
-            "token": "invalid.unimplemented"
-          },
-          {
-            "foreground": "d73a49",
-            "token": "message.error"
-          },
-          {
-            "foreground": "f6f8fa",
-            "token": "string source"
-          },
-          {
-            "foreground": "c8e1ff",
-            "token": "string variable"
-          },
-          {
-            "foreground": "79b8ff",
-            "token": "source.regexp"
-          },
-          {
-            "foreground": "79b8ff",
-            "token": "string.regexp"
-          },
-          {
-            "foreground": "79b8ff",
-            "token": "string.regexp.character-class"
-          },
-          {
-            "foreground": "79b8ff",
-            "token": "string.regexp constant.character.escape"
-          },
-          {
-            "foreground": "79b8ff",
-            "token": "string.regexp source.ruby.embedded"
-          },
-          {
-            "foreground": "79b8ff",
-            "token": "string.regexp string.regexp.arbitrary-repitition"
-          },
-          {
-            "foreground": "7bcc72",
-            "fontStyle": "bold",
-            "token": "string.regexp constant.character.escape"
-          },
-          {
-            "foreground": "c8e1ff",
-            "token": "support.constant"
-          },
-          {
-            "foreground": "c8e1ff",
-            "token": "support.variable"
-          },
-          {
-            "foreground": "c8e1ff",
-            "token": "meta.module-reference"
-          },
-          {
-            "foreground": "fb8532",
-            "token": "markup.list"
-          },
-          {
-            "foreground": "0366d6",
-            "fontStyle": "bold",
-            "token": "markup.heading"
-          },
-          {
-            "foreground": "0366d6",
-            "fontStyle": "bold",
-            "token": "markup.heading entity.name"
-          },
-          {
-            "foreground": "c8e1ff",
-            "token": "markup.quote"
-          },
-          {
-            "foreground": "f6f8fa",
-            "fontStyle": "italic",
-            "token": "markup.italic"
-          },
-          {
-            "foreground": "f6f8fa",
-            "fontStyle": "bold",
-            "token": "markup.bold"
-          },
-          {
-            "foreground": "c8e1ff",
-            "token": "markup.raw"
-          },
-          {
-            "foreground": "b31d28",
-            "background": "ffeef0",
-            "token": "markup.deleted"
-          },
-          {
-            "foreground": "b31d28",
-            "background": "ffeef0",
-            "token": "meta.diff.header.from-file"
-          },
-          {
-            "foreground": "b31d28",
-            "background": "ffeef0",
-            "token": "punctuation.definition.deleted"
-          },
-          {
-            "foreground": "176f2c",
-            "background": "f0fff4",
-            "token": "markup.inserted"
-          },
-          {
-            "foreground": "176f2c",
-            "background": "f0fff4",
-            "token": "meta.diff.header.to-file"
-          },
-          {
-            "foreground": "176f2c",
-            "background": "f0fff4",
-            "token": "punctuation.definition.inserted"
-          },
-          {
-            "foreground": "b08800",
-            "background": "fffdef",
-            "token": "markup.changed"
-          },
-          {
-            "foreground": "b08800",
-            "background": "fffdef",
-            "token": "punctuation.definition.changed"
-          },
-          {
-            "foreground": "2f363d",
-            "background": "959da5",
-            "token": "markup.ignored"
-          },
-          {
-            "foreground": "2f363d",
-            "background": "959da5",
-            "token": "markup.untracked"
-          },
-          {
-            "foreground": "b392f0",
-            "fontStyle": "bold",
-            "token": "meta.diff.range"
-          },
-          {
-            "foreground": "c8e1ff",
-            "token": "meta.diff.header"
-          },
-          {
-            "foreground": "0366d6",
-            "fontStyle": "bold",
-            "token": "meta.separator"
-          },
-          {
-            "foreground": "0366d6",
-            "token": "meta.output"
-          },
-          {
-            "foreground": "ffeef0",
-            "token": "brackethighlighter.tag"
-          },
-          {
-            "foreground": "ffeef0",
-            "token": "brackethighlighter.curly"
-          },
-          {
-            "foreground": "ffeef0",
-            "token": "brackethighlighter.round"
-          },
-          {
-            "foreground": "ffeef0",
-            "token": "brackethighlighter.square"
-          },
-          {
-            "foreground": "ffeef0",
-            "token": "brackethighlighter.angle"
-          },
-          {
-            "foreground": "ffeef0",
-            "token": "brackethighlighter.quote"
-          },
-          {
-            "foreground": "d73a49",
-            "token": "brackethighlighter.unmatched"
-          },
-          {
-            "foreground": "d73a49",
-            "token": "sublimelinter.mark.error"
-          },
-          {
-            "foreground": "fb8532",
-            "token": "sublimelinter.mark.warning"
-          },
-          {
-            "foreground": "6a737d",
-            "token": "sublimelinter.gutter-mark"
-          },
-          {
-            "foreground": "79b8ff",
-            "fontStyle": "underline",
-            "token": "constant.other.reference.link"
-          },
-          {
-            "foreground": "79b8ff",
-            "fontStyle": "underline",
-            "token": "string.other.link"
-          }
-        ],
-        "colors": {
-          "editor.foreground": "#f6f8fa",
-          "editor.background": "#24292e",
-          "editor.selectionBackground": "#4c2889",
-          "editor.inactiveSelectionBackground": "#444d56",
-          "editor.lineHighlightBackground": "#444d56",
-          "editorCursor.foreground": "#ffffff",
-          "editorWhitespace.foreground": "#6a737d",
-          "editorIndentGuide.background": "#6a737d",
-          "editorIndentGuide.activeBackground": "#f6f8fa",
-          "editor.selectionHighlightBorder": "#444d56"
+    window.defaultSchema = {
+      "$id": "https://erdomke.github.io/JsonMark/JsonMark-demo",
+      "description": "JsonMark makes it easier to document and validate JSON schemas by providing turning JSON Schema files into simple, yet complete, Markdown documentation that can be hosted on GitHub or processed using static site generators.\n\n**Demo**\n\nUpdate the schema and click on `Convert to Markdown` to generate the documentation.\n\n**JSON Schema Support**\n\nJsonMark currently supports all keywords defined in [JSON Schema `2020-12`](https://json-schema.org/draft/2020-12) except for `$dynamicAnchor` and `$dynamicRef`. Schemas written against other drafts (from `draft-05` onwards) are also supported.",
+      "properties": {
+        "uri": {
+          "type": "string",
+          "description": "The URI (or IRI) of the image.",
+          "format": "iri-reference",
+          "gltf_detailedDescription": "The URI (or IRI) of the image.  Relative paths are relative to the current glTF asset.  Instead of referencing an external file, this field **MAY** contain a `data:`-URI. This field **MUST NOT** be defined when `bufferView` is defined.",
+          "gltf_uriType": "image",
+          "examples": [
+            "https://raw.githubusercontent.com/KhronosGroup/glTF/main/specification/figures/gltf.png"
+          ]
+        },
+        "mimeType": {
+          "anyOf": [
+            {
+              "const": "image/jpeg"
+            },
+            {
+              "const": "image/png"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "The image's media type. This field **MUST** be defined when `bufferView` is defined."
+        },
+        "bufferView": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "The index of the bufferView that contains the image. This field **MUST NOT** be defined when `uri` is defined.",
+          "examples": [
+            3,
+            0
+          ]
+        },
+        "fraction": {
+          "type": "number",
+          "description": "A number that **MUST** be between zero and one.",
+          "exclusiveMinimum": 0.0,
+          "exclusiveMaximum": 1.0
+        },
+        "moreFractions": {
+          "type": "array",
+          "description": "An array of three fractional numbers.",
+          "items": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "exclusiveMaximum": 1.0
+          },
+          "minItems": 3,
+          "maxItems": 3,
+          "default": [
+            0.1,
+            0.2,
+            0.3
+          ],
+          "examples": [
+            [
+              1.3,
+              4.03,
+              42.0
+            ],
+            [
+              18.0,
+              0.1,
+              1.1
+            ]
+          ]
         }
+      },
+      "dependencies": {
+        "bufferView": [
+          "mimeType"
+        ]
+      },
+      "oneOf": [
+        {
+          "required": [
+            "uri"
+          ]
+        },
+        {
+          "required": [
+            "bufferView"
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "uri": "https://raw.githubusercontent.com/KhronosGroup/glTF/main/specification/figures/gltf.png",
+          "mimeType": "image/png"
+        },
+        {
+          "bufferView": 2,
+          "fraction": 0.3,
+          "moreFractions": [ 1.1, 2.2, 3.3 ]
+        }
+      ]
+    }
+    window.editors = new Promise((resolve) => {
+      require(['vs/editor/editor.main'], function () {
+        monaco.editor.defineTheme('github-dark', {
+          "base": "vs-dark",
+          "inherit": true,
+          "rules": [
+            {
+              "background": "24292e",
+              "token": ""
+            },
+            {
+              "foreground": "959da5",
+              "token": "comment"
+            },
+            {
+              "foreground": "959da5",
+              "token": "punctuation.definition.comment"
+            },
+            {
+              "foreground": "959da5",
+              "token": "string.comment"
+            },
+            {
+              "foreground": "c8e1ff",
+              "token": "constant"
+            },
+            {
+              "foreground": "c8e1ff",
+              "token": "entity.name.constant"
+            },
+            {
+              "foreground": "c8e1ff",
+              "token": "variable.other.constant"
+            },
+            {
+              "foreground": "c8e1ff",
+              "token": "variable.language"
+            },
+            {
+              "foreground": "b392f0",
+              "token": "entity"
+            },
+            {
+              "foreground": "b392f0",
+              "token": "entity.name"
+            },
+            {
+              "foreground": "f6f8fa",
+              "token": "variable.parameter.function"
+            },
+            {
+              "foreground": "7bcc72",
+              "token": "entity.name.tag"
+            },
+            {
+              "foreground": "ea4a5a",
+              "token": "keyword"
+            },
+            {
+              "foreground": "ea4a5a",
+              "token": "storage"
+            },
+            {
+              "foreground": "ea4a5a",
+              "token": "storage.type"
+            },
+            {
+              "foreground": "f6f8fa",
+              "token": "storage.modifier.package"
+            },
+            {
+              "foreground": "f6f8fa",
+              "token": "storage.modifier.import"
+            },
+            {
+              "foreground": "f6f8fa",
+              "token": "storage.type.java"
+            },
+            {
+              "foreground": "79b8ff",
+              "token": "string"
+            },
+            {
+              "foreground": "79b8ff",
+              "token": "punctuation.definition.string"
+            },
+            {
+              "foreground": "79b8ff",
+              "token": "string punctuation.section.embedded source"
+            },
+            {
+              "foreground": "c8e1ff",
+              "token": "support"
+            },
+            {
+              "foreground": "c8e1ff",
+              "token": "meta.property-name"
+            },
+            {
+              "foreground": "fb8532",
+              "token": "variable"
+            },
+            {
+              "foreground": "f6f8fa",
+              "token": "variable.other"
+            },
+            {
+              "foreground": "d73a49",
+              "fontStyle": "bold italic underline",
+              "token": "invalid.broken"
+            },
+            {
+              "foreground": "d73a49",
+              "fontStyle": "bold italic underline",
+              "token": "invalid.deprecated"
+            },
+            {
+              "foreground": "fafbfc",
+              "background": "d73a49",
+              "fontStyle": "italic underline",
+              "token": "invalid.illegal"
+            },
+            {
+              "foreground": "fafbfc",
+              "background": "d73a49",
+              "fontStyle": "italic underline",
+              "token": "carriage-return"
+            },
+            {
+              "foreground": "d73a49",
+              "fontStyle": "bold italic underline",
+              "token": "invalid.unimplemented"
+            },
+            {
+              "foreground": "d73a49",
+              "token": "message.error"
+            },
+            {
+              "foreground": "f6f8fa",
+              "token": "string source"
+            },
+            {
+              "foreground": "c8e1ff",
+              "token": "string variable"
+            },
+            {
+              "foreground": "79b8ff",
+              "token": "source.regexp"
+            },
+            {
+              "foreground": "79b8ff",
+              "token": "string.regexp"
+            },
+            {
+              "foreground": "79b8ff",
+              "token": "string.regexp.character-class"
+            },
+            {
+              "foreground": "79b8ff",
+              "token": "string.regexp constant.character.escape"
+            },
+            {
+              "foreground": "79b8ff",
+              "token": "string.regexp source.ruby.embedded"
+            },
+            {
+              "foreground": "79b8ff",
+              "token": "string.regexp string.regexp.arbitrary-repitition"
+            },
+            {
+              "foreground": "7bcc72",
+              "fontStyle": "bold",
+              "token": "string.regexp constant.character.escape"
+            },
+            {
+              "foreground": "c8e1ff",
+              "token": "support.constant"
+            },
+            {
+              "foreground": "c8e1ff",
+              "token": "support.variable"
+            },
+            {
+              "foreground": "c8e1ff",
+              "token": "meta.module-reference"
+            },
+            {
+              "foreground": "fb8532",
+              "token": "markup.list"
+            },
+            {
+              "foreground": "0366d6",
+              "fontStyle": "bold",
+              "token": "markup.heading"
+            },
+            {
+              "foreground": "0366d6",
+              "fontStyle": "bold",
+              "token": "markup.heading entity.name"
+            },
+            {
+              "foreground": "c8e1ff",
+              "token": "markup.quote"
+            },
+            {
+              "foreground": "f6f8fa",
+              "fontStyle": "italic",
+              "token": "markup.italic"
+            },
+            {
+              "foreground": "f6f8fa",
+              "fontStyle": "bold",
+              "token": "markup.bold"
+            },
+            {
+              "foreground": "c8e1ff",
+              "token": "markup.raw"
+            },
+            {
+              "foreground": "b31d28",
+              "background": "ffeef0",
+              "token": "markup.deleted"
+            },
+            {
+              "foreground": "b31d28",
+              "background": "ffeef0",
+              "token": "meta.diff.header.from-file"
+            },
+            {
+              "foreground": "b31d28",
+              "background": "ffeef0",
+              "token": "punctuation.definition.deleted"
+            },
+            {
+              "foreground": "176f2c",
+              "background": "f0fff4",
+              "token": "markup.inserted"
+            },
+            {
+              "foreground": "176f2c",
+              "background": "f0fff4",
+              "token": "meta.diff.header.to-file"
+            },
+            {
+              "foreground": "176f2c",
+              "background": "f0fff4",
+              "token": "punctuation.definition.inserted"
+            },
+            {
+              "foreground": "b08800",
+              "background": "fffdef",
+              "token": "markup.changed"
+            },
+            {
+              "foreground": "b08800",
+              "background": "fffdef",
+              "token": "punctuation.definition.changed"
+            },
+            {
+              "foreground": "2f363d",
+              "background": "959da5",
+              "token": "markup.ignored"
+            },
+            {
+              "foreground": "2f363d",
+              "background": "959da5",
+              "token": "markup.untracked"
+            },
+            {
+              "foreground": "b392f0",
+              "fontStyle": "bold",
+              "token": "meta.diff.range"
+            },
+            {
+              "foreground": "c8e1ff",
+              "token": "meta.diff.header"
+            },
+            {
+              "foreground": "0366d6",
+              "fontStyle": "bold",
+              "token": "meta.separator"
+            },
+            {
+              "foreground": "0366d6",
+              "token": "meta.output"
+            },
+            {
+              "foreground": "ffeef0",
+              "token": "brackethighlighter.tag"
+            },
+            {
+              "foreground": "ffeef0",
+              "token": "brackethighlighter.curly"
+            },
+            {
+              "foreground": "ffeef0",
+              "token": "brackethighlighter.round"
+            },
+            {
+              "foreground": "ffeef0",
+              "token": "brackethighlighter.square"
+            },
+            {
+              "foreground": "ffeef0",
+              "token": "brackethighlighter.angle"
+            },
+            {
+              "foreground": "ffeef0",
+              "token": "brackethighlighter.quote"
+            },
+            {
+              "foreground": "d73a49",
+              "token": "brackethighlighter.unmatched"
+            },
+            {
+              "foreground": "d73a49",
+              "token": "sublimelinter.mark.error"
+            },
+            {
+              "foreground": "fb8532",
+              "token": "sublimelinter.mark.warning"
+            },
+            {
+              "foreground": "6a737d",
+              "token": "sublimelinter.gutter-mark"
+            },
+            {
+              "foreground": "79b8ff",
+              "fontStyle": "underline",
+              "token": "constant.other.reference.link"
+            },
+            {
+              "foreground": "79b8ff",
+              "fontStyle": "underline",
+              "token": "string.other.link"
+            }
+          ],
+          "colors": {
+            "editor.foreground": "#f0f6fc",
+            "editor.background": "#151b23",
+            "editor.selectionBackground": "#4c2889",
+            "editor.inactiveSelectionBackground": "#444d56",
+            "editor.lineHighlightBackground": "#444d56",
+            "editorCursor.foreground": "#ffffff",
+            "editorWhitespace.foreground": "#6a737d",
+            "editorIndentGuide.background": "#6a737d",
+            "editorIndentGuide.activeBackground": "#f0f6fc",
+            "editor.selectionHighlightBorder": "#444d56"
+          }
+        });
+        window.schemaEditor = monaco.editor.create(document.getElementById('schemaEditor'), {
+          value: JSON.stringify(defaultSchema, null, 2),
+          language: 'json',
+          theme: 'github-dark'
+        });
+        window.markdownEditor = monaco.editor.create(document.getElementById('markdownEditor'), {
+          language: 'markdown',
+          theme: 'github-dark',
+          readOnly: true
+        });
+        resolve({
+          schemaEditor: window.schemaEditor,
+          markdownEditor: window.markdownEditor
+        });
       });
-      monaco.editor.setTheme('github-dark');
     });
   </script>
 
@@ -449,7 +551,7 @@
     import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
     import generateMarkdown from './jsonmark.min.js';
   
-    document.getElementById('convertBtn').addEventListener('click', function() {
+    const renderMarkdownFromSchemaText = () => {
       const schemaText = window.schemaEditor.getValue();
       let markdown = '';
       try {
@@ -469,7 +571,9 @@
       document.getElementById('output').innerHTML =
         marked.parse(markdown);
       hljs.highlightAll();
-    });
+    };
+    document.getElementById('convertBtn').addEventListener('click', renderMarkdownFromSchemaText);
+    window.editors.then(renderMarkdownFromSchemaText);
   </script>
 </body>
 </html>
