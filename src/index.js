@@ -1,10 +1,10 @@
-const fs = require('fs/promises');
-const path = require('path');
-const url = require('url');
-const { processSchema } = require('./utils/schemaProcessor');
+import fs from 'fs/promises';
+import path from 'path';
+import url from 'url';
+import generateMarkdown from './utils/generateMarkdown.js';
 
-const jsonSchemaFilePath = process.argv[2];
-const outputMarkdownFilePath = process.argv[3];
+let jsonSchemaFilePath = process.argv[2];
+let outputMarkdownFilePath = process.argv[3];
 
 /**
  * Recursively list all files in a directory with a specific extension.
@@ -29,42 +29,44 @@ async function listFiles(dir, extension) {
   return jsonFiles;
 }
 
-(async () => {
+try {
   if (!jsonSchemaFilePath) {
     console.error('Please provide a path to the JSON schema file or directory.');
     process.exit(1);
   }
-  
-  try {
-    const isDirectory = (await fs.stat(jsonSchemaFilePath)).isDirectory();
-    const fileList = isDirectory
-      ? await listFiles(jsonSchemaFilePath, '.json')
-      : [jsonSchemaFilePath];
-    const schemas = {};
-    const options = {
-      rootPath: isDirectory ? jsonSchemaFilePath : path.dirname(jsonSchemaFilePath),
-      output: "single"
-    };
-    for (let inputPath of fileList) {
-      const data = await fs.readFile(inputPath, 'utf8');
-    
-      try {
-        schemas[url.pathToFileURL(inputPath)] = JSON.parse(data);
-      } catch (parseError) {
-        console.error(`Error parsing JSON ${inputPath}: ${parseError.message}`);
-        process.exit(1);
-      }
-    };
-    const markdowns = processSchema(schemas, options);
-    markdowns.forEach(async ({markdown, fileName}) => {
-      let outputPath = outputMarkdownFilePath.endsWith('.md')
-        ? outputMarkdownFilePath 
-        : path.join(outputMarkdownFilePath, fileName);
-      await fs.mkdir(path.dirname(outputPath), { recursive: true });
-      await fs.writeFile(outputPath, markdown);
-    });
-  } catch (err) {
-    console.error(`Error: ${err.message}`);
-    process.exit(1);
+
+  jsonSchemaFilePath = path.resolve(process.cwd(), jsonSchemaFilePath);
+  const isDirectory = (await fs.stat(jsonSchemaFilePath)).isDirectory();
+  const fileList = isDirectory
+    ? await listFiles(jsonSchemaFilePath, '.json')
+    : [jsonSchemaFilePath];
+  const schemas = {};
+  const options = {
+    rootPath: url.pathToFileURL(isDirectory ? jsonSchemaFilePath : path.dirname(jsonSchemaFilePath)).href,
+    //output: "single"
+  };
+  for (let inputPath of fileList) {
+    const data = await fs.readFile(inputPath, 'utf8');
+    try {
+      schemas[url.pathToFileURL(inputPath)] = JSON.parse(data);
+    } catch (parseError) {
+      console.error(`Error parsing JSON ${inputPath}: ${parseError.message}`);
+      process.exit(1);
+    }
+  };
+  console.log(`Processing ${fileList.length} JSON files.`);
+  const markdowns = generateMarkdown(schemas, options);
+  console.log(`Writing ${markdowns.length} markdown files.`);
+  for (let {markdown, fileName} of markdowns) {
+    if (fileName.startsWith('file:///'))
+      fileName = url.fileURLToPath(fileName);
+    let outputPath = outputMarkdownFilePath.endsWith('.md')
+      ? outputMarkdownFilePath 
+      : path.join(outputMarkdownFilePath, fileName);
+    await fs.mkdir(path.dirname(outputPath), { recursive: true });
+    await fs.writeFile(outputPath, markdown);
   }
-})();
+} catch (err) {
+  console.error(`Error: ${err.message}`);
+  process.exit(1);
+}
