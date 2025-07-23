@@ -1,0 +1,27 @@
+{
+  "name": "json-to-md-cli",
+  "version": "1.0.0",
+  "description": "A command line tool to process JSON schema files and generate markdown documentation.",
+  "main": "src/index.js",
+  "bin": {
+    "json-to-md": "bin/cli.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "jest"
+  },
+  "keywords": [
+    "json",
+    "schema",
+    "markdown",
+    "cli"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^27.0.0"
+  },
+  "dependencies": {
+    "randexp": "^0.5.3"
+  }
+}
