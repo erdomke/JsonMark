@@ -10,7 +10,8 @@
   "scripts": {
     "start": "node src/index.js",
     "test": "node --experimental-vm-modules \"./node_modules/jest/bin/jest.js\"",
-    "bundle": "npx esbuild src/utils/generateMarkdown.js --bundle --minify --format=esm --outfile=dist/jsonmark.min.js"
+    "build": "npx esbuild src/utils/generateMarkdown.js --bundle --minify --format=esm --outfile=dist/jsonmark.min.js",
+    "build:pages": "npx esbuild src/utils/generateMarkdown.js --bundle --minify --format=esm --outfile=site/jsonmark.min.js"
   },
   "keywords": [
     "json",
