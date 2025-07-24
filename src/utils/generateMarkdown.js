@@ -96,6 +96,35 @@ function generateMarkdown(schemas, options) {
 }
 
 /**
+ * Adapted from https://github.com/Moonbase59/gh-toc/blob/master/gh-toc.js
+ * @param {string} headingTitle 
+ * @returns {string}
+ */
+function getAnchorForHeading(headingTitle) {
+  // make everything (Unicode-aware) lower case
+  let headingAnchor = headingTitle.toLowerCase();
+  // remove everything that is NOT a (Unicode) Letter, (Unicode) Number decimal,
+  // (Unicode) Number letter, white space, underscore or hyphen
+  headingAnchor = headingAnchor.replace(/[^\p{L}\p{Nd}\p{Nl}\s_\-`]/gu, "");
+  // remove sequences of *
+  headingAnchor = headingAnchor.replace(/\*(?=.*)/gu, "");
+  // Underscore handling is complex:
+  //   Alternative 1: Keep in `code` ``blocks``, and remove the backticks
+  //     --> match group $2
+  //   Alternative 2: Remove if not in-word
+  //     --> $3 - whitespace before, $4 content, $5 whitespace after
+  headingAnchor = headingAnchor.replace(
+      /(`(?:`*)?)(.*?)(?:\1)|(\s*)_+([^\s_].+[^\s_])_+(\s*)/gu,
+      "$2$3$4$5"
+  );
+  // remove leftover backticks
+  headingAnchor = headingAnchor.replace(/`/gu, "");
+  // Now replace remaining blanks with '-'
+  headingAnchor = headingAnchor.replace(/ /gu, "-");
+  return headingAnchor;
+}
+
+/**
  * @param {string} src The source URI or path
  * @param {string} ref
  * @param {string} rootPath
@@ -161,6 +190,12 @@ const alternatesToParagraphs = (arr, label, resolveRef, root) => {
       doc[doc.length - 1] = doc[doc.length - 1].replace(/<\/code>/, ' | null</code>');
     };
 
+    if (doc.every(d => d.startsWith('<code>'))) {
+      const pattern = /<code>(.*?)<\/code>/;
+      doc.sort((a, b) => pattern.exec(a)[1]
+        .localeCompare(pattern.exec(b)[1], undefined, {numeric: true, sensitivity: 'base'}));
+    }
+
     if (doc.length === 1) {
       return doc;
     } else if (doc.length < 6 && doc.every(isTypeReferenceOnly)) {
@@ -197,7 +232,7 @@ function schemaToMarkdown(schema, resolveRef, options) {
       return schemaToMarkdown(resolveRef(schema.$ref), resolveRef, {});
     } else {
       const name = createNameFromRef(schema.$ref);
-      firstLine.push(`<code><a href="#${name}">${name}</a></code>`);
+      firstLine.push(`<code><a href="#${getAnchorForHeading(name)}">${name}</a></code>`);
     }
   } else if (schema.const !== undefined) {
     firstLine.push(`<code>${JSON.stringify(schema.const).replaceAll(/</g, "&lt;")}</code>`);

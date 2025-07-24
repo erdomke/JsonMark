@@ -43,7 +43,8 @@ try {
   const schemas = {};
   const options = {
     rootPath: url.pathToFileURL(isDirectory ? jsonSchemaFilePath : path.dirname(jsonSchemaFilePath)).href,
-    //output: "single"
+    output: "single",
+    headingLevel: 4
   };
   for (let inputPath of fileList) {
     const data = await fs.readFile(inputPath, 'utf8');

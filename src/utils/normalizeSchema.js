@@ -73,7 +73,7 @@ function normalizeSchema(schema, uri, refMap) {
   }
 
   const propsToCopy = new Set(Object.keys(schema)
-    .filter(key => !['enum', 'oneOf', 'allOf', 'anyOf', 'not', 'type', '$defs'].includes(key)));
+    .filter(key => !['enum', 'oneOf', 'allOf', 'anyOf', 'not', 'type', '$defs', 'definitions'].includes(key)));
   if (types.length > 1)
     types.flatMap(type => typeToCopy[type] ?? [])
       .forEach(prop => propsToCopy.delete(prop));
@@ -302,6 +302,16 @@ function normalizeSchema(schema, uri, refMap) {
   if (typeof schema.$anchor === "string")
     refMap[`${uri.split('#')[0]}#${schema.$anchor}`] = result;
 
+  if (typeof schema.$defs === "object") {
+    Object.entries(schema.$defs).forEach(([defName, defSchema]) => {
+      normalizeSchema(defSchema, appendPathToUriHash(uri, `$defs/${defName}`), refMap);
+    })
+  } else if (typeof schema.definitions === "object") {
+    Object.entries(schema.definitions).forEach(([defName, defSchema]) => {
+      normalizeSchema(defSchema, appendPathToUriHash(uri, `definitions/${defName}`), refMap);
+    })
+  }
+
   let refsToResolve = Object.entries(refMap)
     .filter(([ref, value]) => ref.startsWith(uri) && value === null);
   while (refsToResolve.length > 0) {
@@ -437,7 +447,7 @@ function cloneSchema(schema, propsToCopy, uri, refMap) {
   return Object.fromEntries(Object.entries(schema)
     .filter(([key]) => propsToCopy.includes(key))
     .map(([key, value]) => {
-      if (key === "properties" || key === "patternProperties" || key === "dependentSchemas" || key === "$defs") {
+      if (key === "properties" || key === "patternProperties" || key === "dependentSchemas" || key === "$defs" || key === "definitions") {
         const newProps = Object.fromEntries(Object.entries(value)
           .map(([propKey, propValue]) => {
             return [propKey, normalizeSchema(propValue, appendPathToUriHash(uri, `${key}/${propKey}`), refMap)];
