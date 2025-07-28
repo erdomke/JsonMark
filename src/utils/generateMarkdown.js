@@ -23,7 +23,8 @@ function generateMarkdown(schemas, options) {
     const refMap = {};
     Object.entries(schemas)
       .forEach(([uri, schema]) => {
-        normalizeSchema(schema, uri, refMap)
+        const root = normalizeSchema(schema, uri, refMap);
+        root.$root = true;
         Object.entries(refMap)
           .forEach(([, schema]) => {
             if (schema && typeof schema.$src !== 'string') {
@@ -42,24 +43,28 @@ function generateMarkdown(schemas, options) {
 
     options = options ?? {};
     const heading = '#'.repeat(options.headingLevel ?? 1);
-    const markdownSections = Object.entries(refMap)
+    const entriesToDocument = Object.entries(refMap)
       .filter(([ref, schema]) => schema !== null 
         && !/#.*\/(oneOf|anyOf|not|allOf|properties|patternProperties|dependencies|dependentSchemas|additionalProperties|unevaluatedProperties|items|unevaluatedItems|contains|contentSchema|prefixItems)\b/.test(ref)
-        && (ref === '#' || !schema.type || schema.type === "object"))
+        && (ref === '#' || schema.$root === true || !schema.type || schema.type === "object"))
       .map(([ref, schema]) => ({
         ref, 
         name: createNameFromRef(ref),
         schema
       }))
       .sort((a, b) => {
-        const compare = getFragmentPath(a.ref).length - getFragmentPath(b.ref).length;
-        return compare === 0 
-          ? a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}) 
-          : compare;
-      })
+        let compare = (a.schema.$root === true ? 0 : 1) - 
+          (b.schema.$root === true ? 0 : 1);
+        if (compare === 0)
+          compare = getFragmentPath(a.ref).length - getFragmentPath(b.ref).length;
+        if (compare === 0)
+          compare = a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'});
+        return compare;
+      });
+    const markdownSections = entriesToDocument
       .map(({ref, name, schema}) => {
         return {
-          original: ref.split('#')[0],
+          original: schema.$src ?? ref.split('#')[0],
           fileName: getFileNameFromRef(schema.$src, ref, options.rootPath),
           markdown: `${heading} ${name}\n\n${schemaToMarkdown(schema, (r) => {
             if (isUri(ref))
@@ -582,8 +587,10 @@ function getRangeValidation (label, min, minExclusive, max, maxExclusive) {
  * @returns {string}
  */
 function createNameFromRef(ref) {
-  const [filePath, fragment] = ref.split('#');
+  let [filePath, fragment] = ref.split('#');
   if (filePath && !fragment) {
+    if (filePath.endsWith('/'))
+      filePath = filePath.substring(0, filePath.length - 1);
     if (filePath.indexOf('\\') < 0)
       return filePath.split('/').pop();
     else
