@@ -219,11 +219,6 @@ function getSchemaExample(schema, index, resolveRef, refPath) {
     }
   }
 
-  if (Array.isArray(schema.oneOf))
-    return getSchemaExample(schema.oneOf[index % schema.oneOf.length], 0, resolveRef, refPath);
-  if (Array.isArray(schema.anyOf))
-    return getSchemaExample(schema.anyOf[index % schema.anyOf.length], 0, resolveRef, refPath);
-
   if (Array.isArray(schema.allOf)) {
     const startExample = getSchemaExample(schema.allOf[0], 0, resolveRef, refPath);
     if (typeof startExample === "object") {
@@ -234,22 +229,20 @@ function getSchemaExample(schema, index, resolveRef, refPath) {
     return startExample;
   }
 
-  if (schema.type === "null")
-    return null;
-  if (schema.type === "boolean")
-    return true;
-  if (schema.type === "integer")
-    return applyNumberConstraints(0, schema);
-  if (schema.type === "number") {
+  let result;
+  if (schema.type === "null") {
+    result = null;
+  } else if (schema.type === "boolean") {
+    result = true;
+  } else if (schema.type === "integer") {
+    result = applyNumberConstraints(0, schema);
+  } else if (schema.type === "number") {
     const isFloat = !Number.isInteger(schema.multipleOf ?? 1) || schema.format === 'float' || schema.format === 'double';
-    return applyNumberConstraints(isFloat ? 0.1 : 0, schema);
-  }
-
-  if (schema.type === "string")
-    return getStringExample(schema, resolveRef);
-
-  if (schema.type === "array") {
-    const result = [];
+    result = applyNumberConstraints(isFloat ? 0.1 : 0, schema);
+  } else if (schema.type === "string") {
+    result = getStringExample(schema, resolveRef);
+  } else if (schema.type === "array") {
+    result = [];
     if (Array.isArray(schema.prefixItems)) {
       for (const item of schema.prefixItems) {
         result.push(getSchemaExample(item, result.length, resolveRef, refPath));
@@ -272,11 +265,10 @@ function getSchemaExample(schema, index, resolveRef, refPath) {
     if (Number.isInteger(schema.maxItems) && result.length > schema.maxItems)
       result.splice(schema.maxItems);
     if (schema.uniqueItems === true)
-      return [...new Set(result)];
-    return result;
+      result = [...new Set(result)];
   } else if (schema.type === "object"
     || (schema.type === undefined && typeof schema.properties === 'object')) {
-    const result = {};
+    result = {};
     let propertiesAdded = 0;
 
     if (typeof schema.properties === 'object') {
@@ -338,11 +330,33 @@ function getSchemaExample(schema, index, resolveRef, refPath) {
         delete result[key];
       }
     }
-    
-    return result;
   }
 
-  return {};
+  /**
+   * @param {Schema[]} array 
+   */
+  const mergeAlternates = array => {
+    const example = getSchemaExample(array[index % schema.oneOf.length], 0, resolveRef, refPath);
+    if (typeof result === "object"
+      && result !== null
+      && typeof example === "object"
+      && example !== null) {
+      return { ...result, ...example };
+    } else {
+      return example;
+    }
+  }
+  if (Array.isArray(schema.oneOf)) {
+    result = mergeAlternates(schema.oneOf);
+  } else if (Array.isArray(schema.anyOf)) {
+    result = mergeAlternates(schema.anyOf);
+  }
+
+  if (result === undefined) {
+    result = {};
+  }
+
+  return result;
 }
 
 export default getSchemaExample;
